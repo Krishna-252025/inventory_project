@@ -35,51 +35,63 @@ def index():
 def add_item():
     if request.method == 'POST':
         name = request.form['name'].strip()
-        description = request.form.get('description','').strip()
-        quantity = request.form.get('quantity','0').strip()
+        description = request.form.get('description', '').strip()
+        quantity = request.form.get('quantity', '0').strip()
+        
         if not name:
             flash('Item name is required.')
             return redirect(url_for('add_item'))
+        
         try:
             qty = int(quantity)
         except:
             flash('Quantity must be a number.')
             return redirect(url_for('add_item'))
+        
         conn = get_db_connection()
         conn.execute('INSERT INTO items (name, description, quantity) VALUES (?, ?, ?)',
                      (name, description, qty))
         conn.commit()
         conn.close()
+        
         flash('Item added successfully.')
         return redirect(url_for('index'))
+
     return render_template('add.html')
 
 @app.route('/update/<int:item_id>', methods=('GET', 'POST'))
 def update_item(item_id):
     conn = get_db_connection()
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
+    
     if item is None:
         conn.close()
         flash('Item not found.')
         return redirect(url_for('index'))
+
     if request.method == 'POST':
         name = request.form['name'].strip()
-        description = request.form.get('description','').strip()
-        quantity = request.form.get('quantity','0').strip()
+        description = request.form.get('description', '').strip()
+        quantity = request.form.get('quantity', '0').strip()
+
         if not name:
             flash('Item name is required.')
             return redirect(url_for('update_item', item_id=item_id))
+
         try:
             qty = int(quantity)
         except:
             flash('Quantity must be a number.')
             return redirect(url_for('update_item', item_id=item_id))
+
         conn.execute('UPDATE items SET name = ?, description = ?, quantity = ? WHERE id = ?',
                      (name, description, qty, item_id))
         conn.commit()
         conn.close()
+
         flash('Item updated successfully.')
         return redirect(url_for('index'))
+
     conn.close()
     return render_template('update.html', item=item)
 
@@ -92,6 +104,13 @@ def delete_item(item_id):
     flash('Item deleted.')
     return redirect(url_for('index'))
 
-if __name__ == '__main__':
-    init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+# ------------------------------
+# IMPORTANT FOR RENDER DEPLOYMENT
+# ------------------------------
+
+# Always initialize DB — Render needs this!
+init_db()
+
+if __name__ == "__main__":
+    app.run()
